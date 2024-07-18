@@ -6,6 +6,7 @@ compose-plugin = "1.6.10-rc03"
 kamel = "0.9.4"
 koin = "3.6.0-Beta5"
 koin-compose = "1.2.0-Beta5"
+koin-annotations = "1.4.0-RC1"
 kotlin = "1.9.23"
 ktor = "2.3.10"
 navigationCompose = "2.7.0-alpha06"
@@ -24,6 +25,8 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+koin-annotations = {module = "io.insert-koin:koin-annotations", version.ref = "koin-annotations"}
+koin-ksp-compiler = {module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotations"}
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

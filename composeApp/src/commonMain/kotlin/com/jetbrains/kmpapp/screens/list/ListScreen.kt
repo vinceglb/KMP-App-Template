@@ -30,7 +30,7 @@ import com.jetbrains.kmpapp.data.MuseumObject
 import com.jetbrains.kmpapp.screens.EmptyScreenContent
 import io.kamel.image.KamelImage
 import io.kamel.image.asyncPainterResource
-import org.koin.compose.viewmodel.koinNavViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
 @Composable
@@ -38,7 +38,7 @@ fun ListScreen(
     navController: NavController,
 ) {
     @OptIn(KoinExperimentalAPI::class)
-    val viewModel = koinNavViewModel<ListViewModel>()
+    val viewModel = koinViewModel<ListViewModel>()
     val objects by viewModel.objects.collectAsState()
 
     AnimatedContent(objects.isNotEmpty()) { objectsAvailable ->

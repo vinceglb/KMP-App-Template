@@ -24,3 +24,137 @@ The app uses the following multiplatform dependencies in its implementation:
 - [Koin](https://github.com/InsertKoinIO/koin) for dependency injection
 
 > These are just some of the possible libraries to use for these tasks with Kotlin Multiplatform, and their usage here isn't a strong recommendation for these specific libraries over the available alternatives. You can find a wide variety of curated multiplatform libraries in the [kmp-awesome](https://github.com/terrakok/kmp-awesome) repository.
+
+
+# Using Koin Annotations
+
+## KSP Setup
+
+To setup Koin Annotations & KSP you need the following:
+
+Gradle Toml file update: 
+- [KSP](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/gradle/libs.versions.toml#L13)
+- [Koin Annotations](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/gradle/libs.versions.toml#L9)
+
+Compose App Build Gradle update:
+- [KSP Plugin](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/build.gradle.kts#L8)
+```kotlin
+alias(libs.plugins.ksp)
+```
+- [Koin Annotations Dependency](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/build.gradle.kts#L56)
+```kotlin
+api(libs.koin.annotations)
+```
+
+Extra KSP Configurations:
+- [KSP Common Source Sets](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/build.gradle.kts#L62)
+```kotlin
+sourceSets.named("commonMain").configure {
+    kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+}
+```
+- [KSP Tasks](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/build.gradle.kts#L68)
+```kotlin
+dependencies {
+    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
+    add("kspAndroid", libs.koin.ksp.compiler)
+    add("kspIosX64", libs.koin.ksp.compiler)
+    add("kspIosArm64", libs.koin.ksp.compiler)
+    add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
+}
+```  
+- [KSP Common Task Trigger](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/build.gradle.kts#L77)
+```kotlin
+project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
+    if(name != "kspCommonMainKotlinMetadata") {
+        dependsOn("kspCommonMainKotlinMetadata")
+    }
+}
+```
+
+## Organize Modules & Components
+
+All Koin configuration is available here: [Koin.kt](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/commonMain/kotlin/com/jetbrains/kmpapp/di/Koin.kt#L26)
+
+Inside this configuration file:
+- All definitions are available as module classes, annotated with `@Module`
+- The `@ComponentScan` allows scanning annotated components for a given package (across Gradle modules)
+- Class components are tagged with `@Single` or `@KoinViewModel`
+- Some components are defined inside annotated Kotlin functions (Json & Http Client)
+
+## Sharing Multiplatform Native Components
+
+The [`NativeModule`](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/commonMain/kotlin/com/jetbrains/kmpapp/di/Koin.kt#L48) class allow to share native components with expect/actual mechanism. The idea is to inject a native implementation of `PlatformComponent` class.
+Here is how it's organized:
+
+In common Kotlin sourceSet:
+- [NativeModule class](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/commonMain/kotlin/com/jetbrains/kmpapp/di/Koin.kt#L48)
+```kotlin
+@Module
+expect class NativeModule
+```
+- [Expect PlatformComponent class](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/commonMain/kotlin/com/jetbrains/kmpapp/native/PlatformComponent.kt#L3C14-L3C31)
+```kotlin
+expect class PlatformComponent {
+    fun sayHello() : String
+}
+```
+
+In Android sourceSet: 
+- [NativeModule class](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/androidMain/kotlin/com/jetbrains/kmpapp/di/Koin.android.kt)
+```kotlin
+@Module
+@ComponentScan("com.jetbrains.kmpapp.native")
+actual class NativeModule
+```
+- [Expect PlatformComponent class](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/androidMain/kotlin/com/jetbrains/kmpapp/native/PlatformComponent.android.kt)
+```kotlin
+@Single
+actual class PlatformComponent(val context: Context){
+    actual fun sayHello() : String = "I'm Android - $context"
+}
+```
+
+In iOS sourceSet: 
+- [NativeModule class](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/iosMain/kotlin/com/jetbrains/kmpapp/di/Koin.ios.kt)
+```kotlin
+@Module
+@ComponentScan("com.jetbrains.kmpapp.native")
+actual class NativeModule
+```
+- [Expect PlatformComponent class](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/iosMain/kotlin/com/jetbrains/kmpapp/native/PlatformComponent.ios.kt)
+```kotlin
+@Single
+actual class PlatformComponent{
+    actual fun sayHello() : String = "I'm iOS"
+}
+```
+
+## Customize Koin Configuration
+
+To allow the use of Koin in multiplatform style, but allow some special configuration (like injecting Android context), we can allow this kind of [startup function](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/commonMain/kotlin/com/jetbrains/kmpapp/di/Koin.kt#L50):
+
+```kotlin
+// config allow to extend Koin configuration from caller side
+fun initKoin(config : KoinAppDeclaration ?= null) {
+    startKoin {
+        modules(
+            AppModule().module,
+        )
+        // call for any extra configuration
+        config?.invoke(this)
+    }
+}
+```
+
+On [Android startup](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/androidMain/kotlin/com/jetbrains/kmpapp/MuseumApp.kt#L10):
+```kotlin
+class MuseumApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        initKoin {
+            androidContext(this@MuseumApp)
+        }
+    }
+}
+```

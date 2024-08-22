@@ -33,6 +33,7 @@ kotlin {
             implementation(libs.androidx.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.koin.android)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -80,7 +81,7 @@ project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
 }
 
 ksp {
-    arg("USE_COMPOSE_VIEWMODEL","true")
+    arg("KOIN_USE_COMPOSE_VIEWMODEL","true")
     arg("KOIN_CONFIG_CHECK","true")
 }
 

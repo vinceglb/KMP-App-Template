@@ -130,6 +130,30 @@ actual class PlatformComponent{
 }
 ```
 
+## Injecting dynamic parameters with @InjectedParam
+
+Let's create an Id generator class that will receive some a prefix, to generate ids:
+
+```kotlin
+@Factory
+class IdGenerator(@InjectedParam private val prefix : String) {
+    
+    fun generate() : String = prefix + KoinPlatformTools.generateId()
+}
+```
+
+We are using `@InjectedParam` to indicates that `prefix` property will be dynamically injected via a call with `parametersOf`.
+
+Later in our code, lets call our generator:
+
+```kotlin
+val idGen = KoinPlatform.getKoin().get<IdGenerator> { parametersOf("_prefix_") }.generate()
+println("Id => $idGen")
+```
+
+It should produces something like `_prefix_d1a7ac22-0aee-4f3c-9d5c-41e6bfae5676`
+
+
 ## Customize Koin Configuration
 
 To allow the use of Koin in multiplatform style, but allow some special configuration (like injecting Android context), we can allow this kind of [startup function](https://github.com/InsertKoinIO/KMP-App-Template/blob/converted_koin_annotations/composeApp/src/commonMain/kotlin/com/jetbrains/kmpapp/di/Koin.kt#L50):
